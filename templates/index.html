@@ -9,38 +9,59 @@
 
 <body>
     <h1>Enter a URL:</h1>
-    <input type="text" id="demo-url" placeholder="https://example.com">
+    <input type="text" id="demo-url" placeholder="https://www.youtube.com/watch?v=Bu3qkwe3WOc">
     <button id="submit-btn">Submit</button>
     <br>
     <div id="response"></div>
     <br>
-    <div id="selectors">
-        <br>
-    </div>
+    <div id="selectors"></div>
     <div id="responseSelector"></div>
+    
     <script>
         const submitBtn = document.getElementById('submit-btn');
         const demoUrlInput = document.getElementById('demo-url');
         const responseDiv = document.getElementById('response');
         const selectors = document.getElementById('selectors');
-    
+        const responseSelector = document.getElementById('responseSelector');
+
+        async function fetchData(url, options) {
+            responseDiv.textContent = 'Loading...';
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+                throw error;
+            } finally {
+                responseDiv.textContent = '';
+            }
+        }
+
         submitBtn.addEventListener('click', async () => {
             const url = demoUrlInput.value;
             try {
-                const response = await fetch('/process-url', {
+                const data = await fetchData('/process-url', {
                     method: 'POST',
                     body: JSON.stringify({ url }),
                     headers: { 'Content-Type': 'application/json' }
                 });
-                const data = await response.json();
+
                 const audio_format_ids = data.audio_format_ids;
                 responseDiv.textContent = `Success! Available audio format IDs: ${audio_format_ids.join(', ')}`;
-    
+
+                // Clear previous selectors and response
+                selectors.innerHTML = '';
+                responseSelector.innerHTML = '';
+
                 // Create the first selector
                 const selector1 = document.createElement('select');
                 selector1.id = 'selector1';
                 selectors.appendChild(selector1);
-    
+
                 // Create options for the first selector
                 audio_format_ids.forEach(id => {
                     const option = document.createElement('option');
@@ -48,29 +69,28 @@
                     option.text = id;
                     selector1.appendChild(option);
                 });
-    
+
                 const submitSBtn = document.createElement('button');
                 submitSBtn.id = 'submit-selector';
                 submitSBtn.textContent = 'Submit';
                 selectors.appendChild(submitSBtn);
-    
-                const submitSelectorBtn = document.getElementById('submit-selector');
-                const responseSelector = document.getElementById('responseSelector');
-    
-                submitSelectorBtn.addEventListener('click', async () => {
+
+                submitSBtn.addEventListener('click', async () => {
                     const selectedValue1 = selector1.value;
-    
                     try {
-                        const response = await fetch('/process-selectors', {
+                        responseSelector.textContent = 'Loading...';
+
+                        const result = await fetchData('/process-selectors', {
                             method: 'POST',
                             body: JSON.stringify({ selector1: selectedValue1, youtube_url: data.youtube_url }),
                             headers: { 'Content-Type': 'application/json' }
                         });
-                        const result = await response.text();  // Assuming Flask returns HTML content
                         responseSelector.innerHTML = result;
                     } catch (error) {
                         console.error(error);
                         responseSelector.textContent = 'Error processing selectors.';
+                    } finally {
+                        responseSelector.textContent = '';
                     }
                 });
             } catch (error) {
