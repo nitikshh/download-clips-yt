@@ -117,7 +117,7 @@ def ensure_9x16_aspect_ratio_with_padding(clip):
     return new_clip
 
 
-def create_random_clips(video_path, clip_duration=3, num_clips=1):
+def create_random_clips(video_path, clip_duration=50, num_clips=1):
     clips = []
     try:
         video = VideoFileClip(video_path)
