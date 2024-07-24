@@ -5,6 +5,7 @@ from urllib.parse import urlparse, parse_qs
 import random
 from moviepy.editor import VideoFileClip
 import yt_dlp
+import re
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 
 app = Flask(__name__, static_folder='clips')
@@ -13,6 +14,14 @@ app = Flask(__name__, static_folder='clips')
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+def extract_audio_format_id(audio_string):
+    match = re.search(r'(\d{3}-\d)', audio_string)
+    if match:
+        return match.group(1)
+    else:
+        return None
 
 
 def get_video_id_from_url(url):
@@ -30,33 +39,33 @@ def list_and_select_audio_tracks(youtube_url):
             'format': 'bestaudio/best',
             'noplaylist': True,
             'quiet': True,
-            'dumpjson': True
+            'dump_single_json': True
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(youtube_url, download=False)
             formats = info_dict.get('formats', [])
 
-            audio_tracks = [f for f in formats if 'audio' in f.get('format', '')]
+            audio_tracks = [
+                f for f in formats if 'audio' in f.get('format', '')]
             print("Available Audio Tracks:")
             tracks = []
             for index, track in enumerate(audio_tracks):
-                track_info = {
-                    "id": track['format_id'],
-                    "description": track.get('format', 'Unknown Format')
-                }
-                print(f"{index + 1}: {track_info['id']} - {track_info['description']}")
-                tracks.append(track_info)
+                print(
+                    f"{track['format_id']} - {track.get('format', 'Unknown Format')}")
+                tracks.append(
+                    f"{track['format_id']} - {track.get('format', 'Unknown Format')}")
             return tracks
     except Exception as e:
         print(f"Error listing audio tracks: {e}")
         return None
 
 
-def download_youtube_video(youtube_url, audio_format_id, output_path="video.mp4"):
-    print("audio_format_id - ", audio_format_id)
+def download_youtube_video(youtube_url, audio_format, output_path="video.mp4"):
+    audio_format_id = extract_audio_format_id(audio_format)
+    print("audio_format - ", audio_format_id)
     try:
         ydl_opts = {
-            'format': f'bestvideo+bestaudio[format_id={audio_format_id}]/best[format_id={audio_format_id}]',
+            'format': f'bestaudio[format_id={audio_format_id}]',
             'outtmpl': output_path,
             'noplaylist': True,
             'quiet': True,
@@ -69,7 +78,6 @@ def download_youtube_video(youtube_url, audio_format_id, output_path="video.mp4"
         return output_path
     except Exception as e:
         print(f"Error downloading video: {e}")
-        # Fallback to download the original video
         try:
             print("Falling back to download the original video.")
             ydl_opts = {
@@ -95,7 +103,7 @@ def ensure_9x16_aspect_ratio_with_padding(clip):
 
     current_aspect_ratio = width / height
 
-    if (current_aspect_ratio > target_aspect_ratio):
+    if current_aspect_ratio > target_aspect_ratio:
         new_height = int(width / target_aspect_ratio)
         padding_top_bottom = (new_height - height) // 2
         new_clip = clip.margin(top=padding_top_bottom,
@@ -147,8 +155,8 @@ def process_url():
         youtube_url = data['url']
         video_id = get_video_id_from_url(youtube_url)
         if video_id:
-            audio_tracks = list_and_select_audio_tracks(youtube_url)
-            return jsonify({'audio_tracks': audio_tracks, 'youtube_url': youtube_url})
+            audio_format = list_and_select_audio_tracks(youtube_url)
+            return jsonify({'audio_format': audio_format, 'youtube_url': youtube_url})
     except Exception as e:
         print(f"Error processing URL: {e}")
         return jsonify({'error': 'Failed to process URL'}), 400
@@ -158,9 +166,9 @@ def process_url():
 def process_selectors():
     try:
         data = request.get_json()
-        selected_format_id = data['selected_format_id']
+        selector1 = data['selector1']
         youtube_url = data['youtube_url']
-        video_path = download_youtube_video(youtube_url, selected_format_id)
+        video_path = download_youtube_video(youtube_url, selector1)
         if video_path:
             clips = create_random_clips(video_path)
             clip_filenames = save_clips(clips)
