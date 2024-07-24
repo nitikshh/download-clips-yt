@@ -174,7 +174,7 @@ def process_selectors():
             clip_filenames = save_clips(clips)
 
             dynamic_html = ''.join(
-                [f'<video src="/clips/{filename}" controls></video><br>' for filename in clip_filenames])
+                [f'<video style="height:300px" src="/clips/{filename}" controls></video><br>' for filename in clip_filenames])
             return dynamic_html
         else:
             return "Error processing video", 500
