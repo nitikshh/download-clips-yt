@@ -66,6 +66,7 @@
                             body: JSON.stringify({ selector1: selectedValue1, youtube_url: data.youtube_url }),
                             headers: { 'Content-Type': 'application/json' }
                         });
+                        responseDiv.innerHTML = "Creating Clips for You.....";
                         const result = await response.text();  // Assuming Flask returns HTML content
                         responseSelector.innerHTML = result;
                     } catch (error) {
