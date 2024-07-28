@@ -1,85 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demo URL Processing</title>
+    <title>Upload YouTube URL</title>
 </head>
-
 <body>
-    <h1>Enter a URL:</h1>
-    <input type="text" id="demo-url" placeholder="https://example.com">
-    <button id="submit-btn">Submit</button>
-    <br>
-    <div id="response"></div>
-    <br>
-    <div id="selectors">
-        <br>
-    </div>
-    <div id="responseSelector"></div>
-    <script>
-        const submitBtn = document.getElementById('submit-btn');
-        const demoUrlInput = document.getElementById('demo-url');
-        const responseDiv = document.getElementById('response');
-        const selectors = document.getElementById('selectors');
-    
-        submitBtn.addEventListener('click', async () => {
-            const url = demoUrlInput.value;
-            try {
-                const response = await fetch('/process-url', {
-                    method: 'POST',
-                    body: JSON.stringify({ url }),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const data = await response.json();
-                const audio_format = data.audio_format;
-                responseDiv.textContent = `Success! Available audio format IDs: ${audio_format.join(', ')}`;
-    
-                // Create the first selector
-                const selector1 = document.createElement('select');
-                selector1.id = 'selector1';
-                selectors.appendChild(selector1);
-    
-                // Create options for the first selector
-                audio_format.forEach(id => {
-                    const option = document.createElement('option');
-                    option.value = id;
-                    option.text = id;
-                    selector1.appendChild(option);
-                });
-    
-                const submitSBtn = document.createElement('button');
-                submitSBtn.id = 'submit-selector';
-                submitSBtn.textContent = 'Submit';
-                selectors.appendChild(submitSBtn);
-    
-                const submitSelectorBtn = document.getElementById('submit-selector');
-                const responseSelector = document.getElementById('responseSelector');
-    
-                submitSelectorBtn.addEventListener('click', async () => {
-                    const selectedValue1 = selector1.value;
-    
-                    try {
-                        const response = await fetch('/process-selectors', {
-                            method: 'POST',
-                            body: JSON.stringify({ selector1: selectedValue1, youtube_url: data.youtube_url }),
-                            headers: { 'Content-Type': 'application/json' }
-                        });
-                        responseDiv.innerHTML = "Creating Clips for You.....";
-                        const result = await response.text();  // Assuming Flask returns HTML content
-                        responseSelector.innerHTML = result;
-                    } catch (error) {
-                        console.error(error);
-                        responseSelector.textContent = 'Error processing selectors.';
-                    }
-                });
-            } catch (error) {
-                console.error(error);
-                responseDiv.textContent = 'Error processing URL.';
-            }
-        });
-    </script>
+    <h1>Upload YouTube URL</h1>
+    <form action="/" method="post">
+        <label for="youtube_url">YouTube URL:</label>
+        <input type="text" id="youtube_url" name="youtube_url" required>
+        <button type="submit">Submit</button>
+    </form>
 </body>
-
 </html>
