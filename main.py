@@ -4,6 +4,7 @@ import random
 from moviepy.editor import VideoFileClip, vfx
 import yt_dlp
 from urllib.parse import urlparse, parse_qs
+from googleapiclient.discovery import build
 
 app = Flask(__name__)
 
@@ -61,7 +62,7 @@ def ensure_9x16_aspect_ratio_with_padding(clip):
 
     return new_clip
 
-def create_random_clips(video_path, clip_duration=50, num_clips=1):
+def create_random_clips(video_path, clip_duration=5, num_clips=1):
     clips = []
     try:
         video = VideoFileClip(video_path)
@@ -97,6 +98,20 @@ def get_video_id_from_url(url):
             return video_id[0]
     return None
 
+def fetch_youtube_video_details(video_id):
+    youtube = build('youtube', 'v3', developerKey=API_KEY)
+    request = youtube.videos().list(part="snippet", id=video_id)
+    response = request.execute()
+    
+    if response["items"]:
+        snippet = response["items"][0]["snippet"]
+        return {
+            "title": snippet["title"],
+            "description": snippet["description"],
+            "tags": snippet.get("tags", []),
+        }
+    return None
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -105,20 +120,24 @@ def index():
         # Delete existing files before processing new video
         delete_existing_files()
 
+        video_id = get_video_id_from_url(youtube_url)
+        video_details = fetch_youtube_video_details(video_id)
         video_path = download_youtube_video(youtube_url)
 
         if video_path:
             clips = create_random_clips(video_path)
             clip_filenames = save_clips(clips)
-            print(clip_filenames[0].split('/')[1])
             if clip_filenames:
-                return redirect(url_for('show_clip', clip_filename=clip_filenames[0].split('/')[1]))
+                return redirect(url_for('show_clip', clip_filename=clip_filenames[0].split('/')[1], **video_details))
         return "Failed to process video."
     return render_template('index.html')
 
 @app.route('/clip/<clip_filename>')
 def show_clip(clip_filename):
-    return render_template('clip.html', clip_filename=clip_filename)
+    title = request.args.get('title')
+    description = request.args.get('description')
+    tags = request.args.getlist('tags')
+    return render_template('clip.html', clip_filename=clip_filename, title=title, description=description, tags=tags)
 
 @app.route('/clips/<path:filename>')
 def download_file(filename):
