@@ -3,3 +3,5 @@ google-api-python-client
 moviepy
 yt-dlp
 youtube-transcript-api
+tqdm
+oauth2client
