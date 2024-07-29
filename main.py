@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template, send_from_directory, redirect, url_for
 import os
 import random
+import string
 from moviepy.editor import VideoFileClip, vfx
 import yt_dlp
 from urllib.parse import urlparse, parse_qs
@@ -11,6 +12,11 @@ app = Flask(__name__)
 VIDEO_DIR = 'videos'
 CLIP_DIR = 'clips'
 API_KEY = 'AIzaSyDQVz7vWIDCmsUn7MgMwDdfBXROP_4leo4'
+
+def generate_random_filename(extension='mp4'):
+    """Generate a random filename with the given extension."""
+    letters = string.ascii_letters + string.digits
+    return ''.join(random.choice(letters) for _ in range(10)) + f'.{extension}'
 
 def delete_existing_files():
     """Delete existing video and clip files."""
@@ -30,8 +36,11 @@ def delete_existing_files():
         except Exception as e:
             print(f"Error deleting file {file_path}: {e}")
 
-def download_youtube_video(youtube_url, output_path="videos/video.mp4"):
+def download_youtube_video(youtube_url, output_dir=VIDEO_DIR):
     try:
+        output_filename = generate_random_filename()
+        output_path = os.path.join(output_dir, output_filename)
+        
         ydl_opts = {
             'format': 'best',
             'outtmpl': output_path,
@@ -82,11 +91,12 @@ def create_random_clips(video_path, clip_duration=50, num_clips=1):
         print(f"Error creating clips: {e}")
         return []
 
-def save_clips(clips, base_filename="clips/clip"):
+def save_clips(clips, output_dir=CLIP_DIR):
     filenames = []
-    for i, (clip, _, _) in enumerate(clips):
-        filename = f"{base_filename}_{i+1}.mp4"
-        clip.write_videofile(filename, codec='libx264', audio_codec='aac')
+    for clip, _, _ in clips:
+        filename = generate_random_filename()
+        file_path = os.path.join(output_dir, filename)
+        clip.write_videofile(file_path, codec='libx264', audio_codec='aac')
         filenames.append(filename)
     return filenames
 
@@ -121,19 +131,21 @@ def index():
         delete_existing_files()
 
         video_id = get_video_id_from_url(youtube_url)
+        video_details = fetch_youtube_video_details(video_id)
         video_path = download_youtube_video(youtube_url)
 
         if video_path:
             clips = create_random_clips(video_path)
             clip_filenames = save_clips(clips)
             if clip_filenames:
-                return redirect(url_for('show_clip', clip_filename=clip_filenames[0].split('/')[1]))
+                return redirect(url_for('show_clip', clip_filename=clip_filenames[0], video_details=video_details))
         return "Failed to process video."
     return render_template('index.html')
 
 @app.route('/clip/<clip_filename>')
 def show_clip(clip_filename):
-    return render_template('clip.html', clip_filename=clip_filename)
+    video_details = request.args.get('video_details')
+    return render_template('clip.html', clip_filename=clip_filename, video_details=video_details)
 
 @app.route('/clips/<path:filename>')
 def download_file(filename):
