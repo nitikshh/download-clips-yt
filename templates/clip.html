@@ -2,18 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>Clip</title>
 </head>
 <body>
-  
+    <h1>Your Clip</h1>
     <video width="320" height="240" controls>
         <source src="{{ url_for('download_file', filename=clip_filename) }}" type="video/mp4">
         Your browser does not support the video tag.
     </video>
-    
- 
 
+    <h2>{{ video_details.title }}</h2>
+    <p>{{ video_details.description }}</p>
+    <ul>
+        {% for tag in video_details.tags %}
+        <li>{{ tag }}</li>
+        {% endfor %}
+    </ul>
+    
     <a href="/">Go back</a>
 </body>
 </html>
