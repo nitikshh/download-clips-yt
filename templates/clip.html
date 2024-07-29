@@ -6,21 +6,13 @@
     <title>{{ title }}</title>
 </head>
 <body>
-    <h1>{{ title }}</h1>
+  
     <video width="320" height="240" controls>
         <source src="{{ url_for('download_file', filename=clip_filename) }}" type="video/mp4">
         Your browser does not support the video tag.
     </video>
     
-    <h2>Description</h2>
-    <p>{{ description }}</p>
-
-    <h2>Tags</h2>
-    <ul>
-        {% for tag in tags %}
-            <li>{{ tag }}</li>
-        {% endfor %}
-    </ul>
+ 
 
     <a href="/">Go back</a>
 </body>
