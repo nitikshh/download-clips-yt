@@ -121,7 +121,6 @@ def index():
         delete_existing_files()
 
         video_id = get_video_id_from_url(youtube_url)
-        video_details = fetch_youtube_video_details(video_id)
         video_path = download_youtube_video(youtube_url)
 
         if video_path:
@@ -134,10 +133,7 @@ def index():
 
 @app.route('/clip/<clip_filename>')
 def show_clip(clip_filename):
-    title = request.args.get('title')
-    description = request.args.get('description')
-    tags = request.args.getlist('tags')
-    return render_template('clip.html', clip_filename=clip_filename, title=title, description=description, tags=tags)
+    return render_template('clip.html', clip_filename=clip_filename)
 
 @app.route('/clips/<path:filename>')
 def download_file(filename):
