@@ -6,6 +6,7 @@ from moviepy.editor import VideoFileClip, vfx
 import yt_dlp
 from urllib.parse import urlparse, parse_qs
 from googleapiclient.discovery import build
+import re
 
 app = Flask(__name__)
 
@@ -101,11 +102,21 @@ def save_clips(clips, output_dir=CLIP_DIR):
     return filenames
 
 def get_video_id_from_url(url):
-    parsed_url = urlparse(url)
-    if parsed_url.hostname == 'www.youtube.com':
-        video_id = parse_qs(parsed_url.query).get('v')
-        if video_id:
-            return video_id[0]
+    """
+    Extract the video ID from a YouTube URL.
+    """
+    # Define regex patterns for different YouTube URL formats
+    patterns = [
+        r'(https?://)?(www\.)?(youtube\.com|youtu\.?be)/.+v=([a-zA-Z0-9_-]+)',  # standard YouTube URL
+        r'(https?://)?(www\.)?(youtube\.com|youtu\.?be)/.+/([a-zA-Z0-9_-]+)',  # youtu.be short URL
+        r'(https?://)?(www\.)?(youtube\.com|youtu\.?be)/([a-zA-Z0-9_-]+)',  # embed or other format
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(4)
+    
     return None
 
 def fetch_youtube_video_details(video_id):
