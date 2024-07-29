@@ -127,7 +127,7 @@ def index():
             clips = create_random_clips(video_path)
             clip_filenames = save_clips(clips)
             if clip_filenames:
-                return redirect(url_for('show_clip', clip_filename=clip_filenames[0].split('/')[1], **video_details))
+                return redirect(url_for('show_clip', clip_filename=clip_filenames[0].split('/')[1]))
         return "Failed to process video."
     return render_template('index.html')
 
